@@ -6,15 +6,27 @@
  *
  * Supported URLs:
  *
- *  localhost:8000/blink1/on
- *  localhost:8000/blink1/off
- *  localhost:8000/blink1/red
- *  localhost:8000/blink1/green
- *  localhost:8000/blink1/blue
- *  localhost:8000/blink1/blink?rgb=%23ff0ff&time=1.0&count=3
- *  localhost:8000/blink1/fadeToRGB?rgb=%23ff00ff&time=1.0
+ *	PRIMARY STATUS LIGHT
+ *  localhost:8080/blink1/1/on
+ *  localhost:8080/blink1/1/off
+ *  localhost:8080/blink1/1/fadeToRGB?rgb=%23ff00ff&time=1.0
+ *  localhost:8080/blink1/1/setToRGB?rgb=%23ff00ff
+ *  localhost:8080/blink1/1/toggle
+ *  localhost:8080/blink1/1/here
+ *  localhost:8080/blink1/1/out
+ *  localhost:8080/blink1/1/lunch
+ *  localhost:8080/blink1/1/meeting
+ *  localhost:8080/blink1/1/remote
+ *  localhost:8080/blink1/1/busy
+ *  localhost:8080/blink1/1/status
  *
- *
+ *	Status codes:
+ * 		here=1
+ * 		out=0
+ * 		meeting=2
+ * 		lunch=3
+ * 		busy=4
+ * 		remote=5
  */
 
 #include "mongoose.h"
@@ -23,9 +35,10 @@
 
 const char* blink1_server_version = "0.99";
 
-static const char *s_http_port = "8000";
+static const char *s_http_port = "8080";
 static struct mg_serve_http_opts s_http_server_opts;
 
+static const char *serial_1 = "20002C01"
 
 // parse a comma-delimited string containing numbers (dec,hex) into a byte arr
 // FIXME: copy of same func in blink1-tool.c
@@ -60,8 +73,13 @@ static void parse_rgbstr(uint8_t* rgb, char* rgbstr)
 }
 
 // used in ev_handler below
-#define do_blink1_color() \
-    blink1_device* dev = blink1_open(); \
+#define do_blink1_color(selected=0) \
+	if ( selected == 1) { \
+		blink1_device* dev = blink1_openBySerial(serial_1); \
+	} \
+	else { \
+		blink1_device* dev = blink1_open(); \
+	} \
     if( blink1_fadeToRGB( dev, millis, r,g,b ) == -1 ) { \
         fprintf(stderr, "off: blink1 device error\n"); \
         sprintf(result, "%s; couldn't find blink1", result); \
@@ -112,34 +130,93 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
         mg_vcmp( uri, "/blink1/") == 0  ) {
         sprintf(result, "welcome to blink1-tiny-server api server. All URIs start with '/blink1', e.g. '/blink1/red', '/blink1/off', '/blink1/fadeToRGB?rgb=%%23FF00FF'");
     }
-    else if( mg_vcmp( uri, "/blink1/off") == 0 ) {
+    else if( mg_vcmp( uri, "/blink1/1/off") == 0 ) {
         sprintf(result, "blink1 off");
         r = 0; g = 0; b = 0;
-        do_blink1_color();
+        do_blink1_color(1);
     }
-    else if( mg_vcmp( uri, "/blink1/on") == 0 ) {
+	else if( mg_vcmp( uri, "/blink1/1/setToRGB") == 0 ) {
+		sprintf(result, "blink1 setToRGB");
+		do_blink1_color(1);
+	}
+	else if( mg_vcmp( uri, "/blink1/1/toggle") == 0 ) {
+        sprintf(result, "blink1 toggle");
+		if (status == 1) {
+			r = 255; g = 0; b = 0;
+		}
+		else {
+			r = 0; g = 255; b = 0;
+		}
+			do_blink1_color(1);
+	}
+	
+    else if( mg_vcmp( uri, "/blink1/1/on") == 0 ) {
         sprintf(result, "blink1 on");
         r = 255; g = 255; b = 255;
-        do_blink1_color();
+        do_blink1_color(1);
     }
-    else if( mg_vcmp( uri, "/blink1/red") == 0 ) {
-        sprintf(result, "blink1 red");
+    else if( mg_vcmp( uri, "/blink1/1/out") == 0 ) {
+        sprintf(result, "blink1 out");
         r = 255; g = 0; b = 0;
-        do_blink1_color();
+		status = 0;
+        do_blink1_color(1);
     }
-    else if( mg_vcmp( uri, "/blink1/green") == 0 ) {
-        sprintf(result, "blink1 green");
+    else if( mg_vcmp( uri, "/blink1/1/here") == 0 ) {
+        sprintf(result, "blink1 here");
         r = 0; g = 255; b = 0;
-        do_blink1_color();
+		status = 1;
+        do_blink1_color(1);
     }
-    else if( mg_vcmp( uri, "/blink1/blue") == 0 ) {
-        sprintf(result, "blink1 on");
+    else if( mg_vcmp( uri, "/blink1/1/lunch") == 0 ) {
+        sprintf(result, "blink1 lunch");
         r = 0; g = 0; b = 255;
-        do_blink1_color();
+		status = 3;
+        do_blink1_color(1);
     }
-    else if( mg_vcmp( uri, "/blink1/fadeToRGB") == 0 ) {
+	else if( mg_vcmp( uri, "/blink1/1/meeting") == 0 ) {
+        sprintf(result, "blink1 meeting");
+        r = 255; g = 255; b = 0;
+		status = 2;
+        do_blink1_color(1);
+    }
+	else if( mg_vcmp( uri, "/blink1/1/busy") == 0 ) {
+        sprintf(result, "blink1 busy");
+        r = 255; g = 0; b = 255;
+		status = 4;
+        do_blink1_color(1);
+    }
+	else if( mg_vcmp( uri, "/blink1/1/remote") == 0 ) {
+        sprintf(result, "blink1 remote");
+        r = 255; g = 140; b = 0;
+		status = 5;
+        do_blink1_color(1);
+    }
+	else if( mg_vcmp(uri, "/blink1/1/status") == 0) {
+		switch(status){
+			case 0:
+				sprintf(result,"Out");
+				break;
+			case 1:
+				sprintf(result,"Here");
+				break;
+			case 2:
+				sprintf(result,"Meeting");
+				break;
+			case 3:
+				sprintf(result,"Lunch");
+				break;
+			case 4:
+				sprintf(result,"Busy");
+				break;
+			case 5:
+				sprintf(result,"Remote");
+				break;
+		}
+	}
+	
+    else if( mg_vcmp( uri, "/blink1/1/fadeToRGB") == 0 ) {
         sprintf(result, "blink1 fadeToRGB");
-        do_blink1_color();
+        do_blink1_color(1);
     }
     else if( mg_vcmp( uri, "/blink1/blink") == 0 ) {
         sprintf(result, "blink1 blink");
@@ -194,6 +271,7 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
 }
 
 int main(int argc, char *argv[]) {
+	status = 0;
     struct mg_mgr mgr;
     struct mg_connection *nc;
     struct mg_bind_opts bind_opts;
