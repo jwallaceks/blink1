@@ -39,7 +39,8 @@ static const char *s_http_port = "8080";
 static struct mg_serve_http_opts s_http_server_opts;
 
 static const char *serial_1 = "20002C01"
-
+int status;
+	
 // parse a comma-delimited string containing numbers (dec,hex) into a byte arr
 // FIXME: copy of same func in blink1-tool.c
 static int  hexread(uint8_t *buffer, char *string, int buflen)
@@ -74,12 +75,10 @@ static void parse_rgbstr(uint8_t* rgb, char* rgbstr)
 
 // used in ev_handler below
 #define do_blink1_color(selected) \
-	if ( selected == 1) { \
-		blink1_device* dev = blink1_openBySerial(serial_1); \
-	} \
-	else { \
-		blink1_device* dev = blink1_open(); \
-	} \
+    blink1_device* dev = blink1_open(); \
+    if ( selected == 1) { \
+	blink1_device* dev = blink1_openBySerial(serial_1); \
+    } \
     if( blink1_fadeToRGB( dev, millis, r,g,b ) == -1 ) { \
         fprintf(stderr, "off: blink1 device error\n"); \
         sprintf(result, "%s; couldn't find blink1", result); \
@@ -271,7 +270,6 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
 }
 
 int main(int argc, char *argv[]) {
-    int status;
     status = 0;
     struct mg_mgr mgr;
     struct mg_connection *nc;
