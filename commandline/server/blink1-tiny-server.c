@@ -73,7 +73,7 @@ static void parse_rgbstr(uint8_t* rgb, char* rgbstr)
 }
 
 // used in ev_handler below
-#define do_blink1_color(selected=0) \
+#define do_blink1_color(selected) \
 	if ( selected == 1) { \
 		blink1_device* dev = blink1_openBySerial(serial_1); \
 	} \
@@ -271,7 +271,8 @@ static void ev_handler(struct mg_connection *nc, int ev, void *ev_data) {
 }
 
 int main(int argc, char *argv[]) {
-	status = 0;
+    int status;
+    status = 0;
     struct mg_mgr mgr;
     struct mg_connection *nc;
     struct mg_bind_opts bind_opts;
