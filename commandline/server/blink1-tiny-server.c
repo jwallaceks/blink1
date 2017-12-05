@@ -38,7 +38,7 @@ const char* blink1_server_version = "0.99";
 static const char *s_http_port = "8080";
 static struct mg_serve_http_opts s_http_server_opts;
 
-static const char *serial_1 = "20002C01"
+static const char *serial_1 = "20002C01";
 int status;
 	
 // parse a comma-delimited string containing numbers (dec,hex) into a byte arr
